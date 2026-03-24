@@ -1,0 +1,52 @@
+{
+  "vertical": "cafe",
+  "config": "Cafe / Cloud Kitchen",
+  "n_records": 5000,
+  "outcome_rate": 0.2034,
+  "model_auc": 0.5933210129117193,
+  "key_drivers": [
+    {
+      "Construct": "FoodQuality",
+      "Importance": 0.07864357908162668,
+      "Performance": 4.883102853613545,
+      "Quadrant": "MAINTAIN"
+    },
+    {
+      "Construct": "Service",
+      "Importance": 0.04100789425090066,
+      "Performance": 4.526872133353539,
+      "Quadrant": "MAINTAIN"
+    },
+    {
+      "Construct": "Digital",
+      "Importance": 0.03469010238623008,
+      "Performance": 4.226362127862108,
+      "Quadrant": "INVEST HERE"
+    },
+    {
+      "Construct": "Value",
+      "Importance": 0.019232493090540204,
+      "Performance": 3.582391017586628,
+      "Quadrant": "LOW PRIORITY"
+    },
+    {
+      "Construct": "Ambience",
+      "Importance": 0.0031059077455205136,
+      "Performance": 4.944118934089235,
+      "Quadrant": "OVERKILL"
+    }
+  ],
+  "revenue_projection": {
+    "persuadable_count": 3669,
+    "average_uplift_pct": 10.484691061748386,
+    "customer_value_inr": 2500,
+    "annual_revenue_impact_inr": 11540499.451666448,
+    "annual_revenue_impact_lakhs": 115.40499451666449
+  },
+  "segment_counts": {
+    "Persuadable": 3669,
+    "Sure Thing": 693,
+    "Sleeping Dog": 604,
+    "Lost Cause": 34
+  }
+}

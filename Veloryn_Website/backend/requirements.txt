@@ -1,0 +1,18 @@
+# Veloryn Backend Requirements
+
+# Core API
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+pydantic[email]>=2.0.0
+
+# Database (optional - for production)
+# sqlalchemy>=2.0.0
+# asyncpg>=0.28.0
+# alembic>=1.11.0
+
+# Email (optional - for production)
+# sendgrid>=6.10.0
+# python-multipart>=0.0.6
+
+# Utilities
+python-dotenv>=1.0.0
