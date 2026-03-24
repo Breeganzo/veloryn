@@ -5,6 +5,7 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://veloryn.dev'),
   title: 'Veloryn | Intelligence for SMBs',
   description: 'AI-powered analytics tools that help small and medium businesses understand their customers, predict outcomes, and take action.',
   keywords: ['AI', 'analytics', 'SMB', 'lead scoring', 'churn prediction', 'causal inference'],

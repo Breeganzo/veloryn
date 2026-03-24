@@ -2,10 +2,34 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Send, CheckCircle, Mail, MapPin, Phone } from 'lucide-react'
+import { ArrowLeft, Send, CheckCircle, Mail, MapPin } from 'lucide-react'
+
+async function getSubmissionError(response: Response, fallback: string) {
+  try {
+    const payload = await response.json()
+
+    if (typeof payload?.message === 'string' && payload.message.trim()) {
+      return payload.message
+    }
+
+    if (typeof payload?.detail === 'string' && payload.detail.trim()) {
+      return payload.detail
+    }
+
+    if (Array.isArray(payload?.detail) && payload.detail.length > 0) {
+      const firstIssue = payload.detail[0]
+      if (typeof firstIssue?.msg === 'string') {
+        return firstIssue.msg
+      }
+    }
+  } catch {}
+
+  return fallback
+}
 
 export default function ContactPage() {
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [formData, setFormData] = useState({
     name: '',
@@ -18,6 +42,7 @@ export default function ContactPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMessage('')
+    setIsSubmitting(true)
 
     try {
       const response = await fetch('/api/contact', {
@@ -31,9 +56,14 @@ export default function ContactPage() {
         return
       }
 
-      setErrorMessage('Contact form is not reaching the backend right now. Check the deployment and try again.')
+      setErrorMessage(await getSubmissionError(
+        response,
+        'Contact form is not reaching the backend right now. Check the deployment and try again.',
+      ))
     } catch (error) {
       setErrorMessage('Contact form is not reaching the backend right now. Check the deployment and try again.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -160,6 +190,8 @@ export default function ContactPage() {
                 <input
                   type="text"
                   required
+                  minLength={2}
+                  maxLength={120}
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
@@ -174,6 +206,7 @@ export default function ContactPage() {
                 <input
                   type="email"
                   required
+                  maxLength={254}
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
@@ -187,6 +220,7 @@ export default function ContactPage() {
                 </label>
                 <input
                   type="text"
+                  maxLength={160}
                   value={formData.company}
                   onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
@@ -218,6 +252,8 @@ export default function ContactPage() {
                 </label>
                 <textarea
                   required
+                  minLength={10}
+                  maxLength={4000}
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
@@ -228,9 +264,10 @@ export default function ContactPage() {
 
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-lg font-semibold hover:shadow-lg transition flex items-center justify-center"
+                disabled={isSubmitting}
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-lg font-semibold hover:shadow-lg transition flex items-center justify-center disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Send Message
+                {isSubmitting ? 'Sending...' : 'Send Message'}
                 <Send className="w-5 h-5 ml-2" />
               </button>
 

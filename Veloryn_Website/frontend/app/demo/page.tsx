@@ -4,8 +4,32 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Send, CheckCircle, Coffee, Scissors, TrendingUp, Dumbbell } from 'lucide-react'
 
+async function getSubmissionError(response: Response, fallback: string) {
+  try {
+    const payload = await response.json()
+
+    if (typeof payload?.message === 'string' && payload.message.trim()) {
+      return payload.message
+    }
+
+    if (typeof payload?.detail === 'string' && payload.detail.trim()) {
+      return payload.detail
+    }
+
+    if (Array.isArray(payload?.detail) && payload.detail.length > 0) {
+      const firstIssue = payload.detail[0]
+      if (typeof firstIssue?.msg === 'string') {
+        return firstIssue.msg
+      }
+    }
+  } catch {}
+
+  return fallback
+}
+
 export default function DemoPage() {
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [formData, setFormData] = useState({
     name: '',
@@ -19,6 +43,7 @@ export default function DemoPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMessage('')
+    setIsSubmitting(true)
 
     const payload = {
       ...formData,
@@ -40,9 +65,14 @@ export default function DemoPage() {
         return
       }
 
-      setErrorMessage('Demo requests are not reaching the backend right now. Check the deployment and try again.')
+      setErrorMessage(await getSubmissionError(
+        response,
+        'Demo requests are not reaching the backend right now. Check the deployment and try again.',
+      ))
     } catch (error) {
       setErrorMessage('Demo requests are not reaching the backend right now. Check the deployment and try again.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -154,6 +184,8 @@ export default function DemoPage() {
                 <input
                   type="text"
                   required
+                  minLength={2}
+                  maxLength={120}
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
@@ -168,6 +200,7 @@ export default function DemoPage() {
                 <input
                   type="email"
                   required
+                  maxLength={254}
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
@@ -182,6 +215,8 @@ export default function DemoPage() {
                 <input
                   type="text"
                   required
+                  minLength={2}
+                  maxLength={160}
                   value={formData.company}
                   onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
@@ -214,6 +249,8 @@ export default function DemoPage() {
                 </label>
                 <input
                   type="number"
+                  min={0}
+                  step={1}
                   value={formData.monthly_customers}
                   onChange={(e) => setFormData({ ...formData, monthly_customers: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
@@ -226,6 +263,7 @@ export default function DemoPage() {
                   Current Challenges (Optional)
                 </label>
                 <textarea
+                  maxLength={2000}
                   value={formData.current_challenges}
                   onChange={(e) => setFormData({ ...formData, current_challenges: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
@@ -236,9 +274,10 @@ export default function DemoPage() {
 
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-lg font-semibold hover:shadow-lg transition flex items-center justify-center"
+                disabled={isSubmitting}
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-lg font-semibold hover:shadow-lg transition flex items-center justify-center disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Request Demo
+                {isSubmitting ? 'Submitting...' : 'Request Demo'}
                 <Send className="w-5 h-5 ml-2" />
               </button>
 

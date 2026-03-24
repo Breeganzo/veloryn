@@ -13,8 +13,7 @@ import {
   Check,
   Rocket,
   Target,
-  BarChart3,
-  Zap
+  BarChart3
 } from 'lucide-react'
 import { SiteFooter, SiteNavigation } from './components/site-chrome'
 

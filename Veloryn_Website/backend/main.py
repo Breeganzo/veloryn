@@ -5,12 +5,13 @@ FastAPI backend for Veloryn website and PipelinePilot AI
 Run with: uvicorn main:app --reload --port 8000
 """
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, EmailStr
-from typing import Optional, List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
+from typing import Dict, List, Literal, Optional
 import os
+
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 # Initialize FastAPI
 app = FastAPI(
@@ -20,6 +21,7 @@ app = FastAPI(
     docs_url="/api/docs",
     redoc_url="/api/redoc"
 )
+
 
 def get_allowed_origins() -> List[str]:
     configured_origins = os.getenv("ALLOWED_ORIGINS", "")
@@ -36,6 +38,11 @@ def get_allowed_origins() -> List[str]:
         "https://www.veloryn.dev",
     ]
 
+
+def utc_timestamp() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
 # CORS for Next.js frontend
 app.add_middleware(
     CORSMiddleware,
@@ -49,28 +56,35 @@ app.add_middleware(
 # DATA MODELS
 # ============================================================================
 
-class ContactForm(BaseModel):
-    name: str
-    email: EmailStr
-    company: Optional[str] = None
-    message: str
-    request_type: str = "general"  # general, demo, partnership
+class APIModel(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
 
-class DemoRequest(BaseModel):
-    name: str
-    email: EmailStr
-    company: str
-    industry: str  # cafe, salon, agency, fitness, other
-    monthly_customers: Optional[int] = None
-    current_challenges: Optional[str] = None
 
-class LeadScoreRequest(BaseModel):
-    indicators: Dict[str, float]
-    vertical: str = "cafe"
-
-class NewsletterSubscribe(BaseModel):
+class ContactForm(APIModel):
+    name: str = Field(..., min_length=2, max_length=120)
     email: EmailStr
-    name: Optional[str] = None
+    company: Optional[str] = Field(default=None, max_length=160)
+    message: str = Field(..., min_length=10, max_length=4000)
+    request_type: Literal["general", "demo", "partnership", "support", "other"] = "general"
+
+
+class DemoRequest(APIModel):
+    name: str = Field(..., min_length=2, max_length=120)
+    email: EmailStr
+    company: str = Field(..., min_length=2, max_length=160)
+    industry: Literal["cafe", "salon", "agency", "fitness", "other"]
+    monthly_customers: Optional[int] = Field(default=None, ge=0, le=10_000_000)
+    current_challenges: Optional[str] = Field(default=None, max_length=2000)
+
+
+class LeadScoreRequest(APIModel):
+    indicators: Dict[str, float] = Field(..., min_length=1, max_length=50)
+    vertical: Literal["cafe", "salon", "agency", "fitness"] = "cafe"
+
+
+class NewsletterSubscribe(APIModel):
+    email: EmailStr
+    name: Optional[str] = Field(default=None, max_length=120)
 
 # ============================================================================
 # IN-MEMORY STORAGE (Replace with DB in production)
@@ -174,7 +188,7 @@ async def root():
 
 @app.get("/api/health")
 async def health_check():
-    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+    return {"status": "healthy", "timestamp": utc_timestamp()}
 
 # Company & Solutions
 @app.get("/api/company")
@@ -197,16 +211,13 @@ async def get_testimonials():
 
 # Contact & Demo Requests
 @app.post("/api/contact")
-async def submit_contact(contact: ContactForm, background_tasks: BackgroundTasks):
+async def submit_contact(contact: ContactForm):
     contact_data = {
-        **contact.dict(),
-        "timestamp": datetime.now().isoformat(),
+        **contact.model_dump(),
+        "timestamp": utc_timestamp(),
         "status": "new"
     }
     contacts_db.append(contact_data)
-
-    # In production: send email notification
-    # background_tasks.add_task(send_email_notification, contact_data)
 
     return {
         "success": True,
@@ -215,10 +226,10 @@ async def submit_contact(contact: ContactForm, background_tasks: BackgroundTasks
     }
 
 @app.post("/api/demo")
-async def request_demo(demo: DemoRequest, background_tasks: BackgroundTasks):
+async def request_demo(demo: DemoRequest):
     demo_data = {
-        **demo.dict(),
-        "timestamp": datetime.now().isoformat(),
+        **demo.model_dump(),
+        "timestamp": utc_timestamp(),
         "status": "pending"
     }
     demo_requests_db.append(demo_data)
@@ -231,14 +242,16 @@ async def request_demo(demo: DemoRequest, background_tasks: BackgroundTasks):
 
 @app.post("/api/newsletter")
 async def subscribe_newsletter(subscription: NewsletterSubscribe):
+    normalized_email = subscription.email.casefold()
+
     # Check for duplicates
     for sub in newsletter_db:
-        if sub["email"] == subscription.email:
+        if sub["email"].casefold() == normalized_email:
             return {"success": True, "message": "You're already subscribed!"}
 
     newsletter_db.append({
-        **subscription.dict(),
-        "timestamp": datetime.now().isoformat()
+        **subscription.model_dump(),
+        "timestamp": utc_timestamp()
     })
 
     return {
