@@ -7,11 +7,12 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: '/api/:path*',
-        destination: process.env.BACKEND_URL || 'http://localhost:8000/api/:path*',
+      source: '/api/:path*',
+      destination: 'https://veloryn.up.railway.app/api/:path*',
       },
     ];
   },
 };
 
 module.exports = nextConfig;
+
