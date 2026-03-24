@@ -10,7 +10,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-import json
 import os
 
 # Initialize FastAPI
@@ -22,14 +21,25 @@ app = FastAPI(
     redoc_url="/api/redoc"
 )
 
-# CORS for Next.js frontend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
+def get_allowed_origins() -> List[str]:
+    configured_origins = os.getenv("ALLOWED_ORIGINS", "")
+    if configured_origins.strip():
+        return [
+            origin.strip()
+            for origin in configured_origins.split(",")
+            if origin.strip()
+        ]
+
+    return [
         "http://localhost:3000",
         "https://veloryn.dev",
         "https://www.veloryn.dev",
-    ],
+    ]
+
+# CORS for Next.js frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=get_allowed_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -296,4 +306,4 @@ async def get_stats():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "8000")))

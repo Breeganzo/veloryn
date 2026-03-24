@@ -6,6 +6,7 @@ import { ArrowLeft, Send, CheckCircle, Mail, MapPin, Phone } from 'lucide-react'
 
 export default function ContactPage() {
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -16,6 +17,7 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setErrorMessage('')
 
     try {
       const response = await fetch('/api/contact', {
@@ -26,10 +28,12 @@ export default function ContactPage() {
 
       if (response.ok) {
         setIsSubmitted(true)
+        return
       }
+
+      setErrorMessage('Contact form is not reaching the backend right now. Check the deployment and try again.')
     } catch (error) {
-      // For demo without backend
-      setIsSubmitted(true)
+      setErrorMessage('Contact form is not reaching the backend right now. Check the deployment and try again.')
     }
   }
 
@@ -143,6 +147,12 @@ export default function ContactPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Send a Message</h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {errorMessage && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {errorMessage}
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Your Name *

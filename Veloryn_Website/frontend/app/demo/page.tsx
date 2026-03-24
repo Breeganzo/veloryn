@@ -6,6 +6,7 @@ import { ArrowLeft, Send, CheckCircle, Coffee, Scissors, TrendingUp, Dumbbell } 
 
 export default function DemoPage() {
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -17,20 +18,31 @@ export default function DemoPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setErrorMessage('')
+
+    const payload = {
+      ...formData,
+      monthly_customers: formData.monthly_customers
+        ? Number(formData.monthly_customers)
+        : null,
+      current_challenges: formData.current_challenges || null,
+    }
 
     try {
       const response = await fetch('/api/demo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       })
 
       if (response.ok) {
         setIsSubmitted(true)
+        return
       }
+
+      setErrorMessage('Demo requests are not reaching the backend right now. Check the deployment and try again.')
     } catch (error) {
-      // For demo without backend
-      setIsSubmitted(true)
+      setErrorMessage('Demo requests are not reaching the backend right now. Check the deployment and try again.')
     }
   }
 
@@ -129,6 +141,12 @@ export default function DemoPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Request Your Demo</h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {errorMessage && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {errorMessage}
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Your Name *
